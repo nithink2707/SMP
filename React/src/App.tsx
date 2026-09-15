@@ -67,6 +67,7 @@ const GovernanceView = ({ onBack }: { onBack: () => void }) => {
   ];
 
   return (
+  <>  
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -124,6 +125,7 @@ const GovernanceView = ({ onBack }: { onBack: () => void }) => {
           Voting power in Samosa Money Printers is distributed across tiers to ensure balanced decision-making and reward long-term commitment to the kitchen.
         </p>
       </div>
+      </>
   );
 };
 
