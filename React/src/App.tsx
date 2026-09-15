@@ -116,7 +116,7 @@ const GovernanceView = ({ onBack }: { onBack: () => void }) => {
         ))}
       </div>
     </motion.div>
-  ))}
+  )}
 </div>
 
       <div className="mt-16 bg-primary dark:bg-orange-600 text-white p-12 rounded-xl border-[8px] border-white dark:border-slate-800 sticker-shadow text-center">
