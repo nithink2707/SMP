@@ -38,6 +38,13 @@ interface Proposal {
   description: string;
 }
 
+type VotingTier = {
+  name: string;
+  votes: string;
+  members: string[];
+  color: string;
+};
+
 const GovernanceView = ({ onBack }: { onBack: () => void }) => {
   const tiers: VotingTier[] = [
     {
@@ -312,7 +319,8 @@ return (!dataIsLoaded ? (
       </div>
     </div>
   </motion.div>
-))};
+  )
+);
 };
 
 type Item = {
