@@ -116,7 +116,6 @@ const GovernanceView = ({ onBack }: { onBack: () => void }) => {
         ))}
       </div>
     </motion.div>
-  
 
       <div className="mt-16 bg-primary dark:bg-orange-600 text-white p-12 rounded-xl border-[8px] border-white dark:border-slate-800 sticker-shadow text-center">
         <Vote className="mx-auto mb-6 w-16 h-16" />
@@ -125,7 +124,6 @@ const GovernanceView = ({ onBack }: { onBack: () => void }) => {
           Voting power in Samosa Money Printers is distributed across tiers to ensure balanced decision-making and reward long-term commitment to the kitchen.
         </p>
       </div>
-    </motion.div>
   );
 };
 
