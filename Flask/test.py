@@ -12,18 +12,23 @@
 # for i in data['data']:
 #     print(f' {i} : {round(data['data'][i]['quote']['USD']['price'],1)}')
 
-import json
+# import json
 
-f= open('balance.json','w')
+# f= open('balance.json','w')
 
-json.dump({'bal':1},f)
+# json.dump({'bal':1},f)
 
-f.close()
+# f.close()
 
-f = open('balance.json','r')
+# f = open('balance.json','r')
 
-read = json.load(f)
-print(read['bal'])
+# read = json.load(f)
+# print(read['bal'])
+import requests
+
+response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/7GPGqsfVK1gG88GuVEetrsVyDiikABTsj9B9aHEHpump',headers={"Accept":"*/*"})
+data = list(response.json())
+print(data[0]["fdv"])
 
 
 
