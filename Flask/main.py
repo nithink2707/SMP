@@ -9,13 +9,13 @@ import json
 import os
 from functools import partial
 import aiohttp
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
-semaphore = threading.Semaphore(20)
 
 DBURL = os.environ["DATABASE_URL"]
 
 db_pool = psycopg2.pool.ThreadedConnectionPool(1,80,DBURL)
+position_executor = ThreadPoolExecutor(max_workers=20)
 
 def get_db():
     return db_pool.getconn()
@@ -23,26 +23,18 @@ def get_db():
 def return_db(conn):
     db_pool.putconn(conn)
 
-def worker(ca,tick,fdv):
-    try:
-        check(ca,tick,fdv)
-    finally:
-        semaphore.release()
-
 def check_all_positions():
-    """Check all open positions every 5 minutes"""
-    sql = get_db()
+    """Submit all open positions for price checks."""
+    conn = get_db()
     try:
-        cursor = sql.cursor()
-        cursor.execute("SELECT CA, Name, Initial FROM port WHERE SellBal IS NULL")  # Only check open positions
-        positions = cursor.fetchall()
-        cursor.close()
-        for ca, tick, fdv in positions:
-            semaphore.acquire()
-            thread = threading.Thread(target=worker, args =(ca, tick, fdv), daemon=True)
-            thread.start()
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT CA, Name, Initial FROM port WHERE SellBal IS NULL")
+            positions = cursor.fetchall()
     finally:
-        return_db(sql)
+        return_db(conn)
+
+    for position in positions:
+        position_executor.submit(check_position, position)
     
     
 
@@ -87,40 +79,6 @@ def getbal():
 
 
 
-def buybal(tick):
-    sql = get_db()
-    try:
-        cursor = sql.cursor()
-        cursor.execute(f"UPDATE port set BuyBal= COALESCE(BuyBal,0)-0.1 WHERE Name = '{tick}'")
-        cursor.execute(f'UPDATE bal set Balance= Balance-0.1')
-        sql.commit()
-        cursor.close()
-    finally:
-        return_db(sql)
-
-    
-def sellbal(final,fdv,tick):
-    sql = get_db()
-    try:
-        cursor = sql.cursor()
-        cursor.execute(f'UPDATE bal set Balance= Balance+{(0.1*(final-fdv)/fdv)}')
-        cursor.execute(f"UPDATE port set SellBal= COALESCE(SellBal,0)+{(0.1*(final-fdv)/fdv)} WHERE Name = '{tick}'")
-        sql.commit()
-        cursor.close()
-    finally:
-        return_db(sql)
-
-
-def add(tick,fdv,ca):
-    sql = get_db()
-    try:
-        cursor = sql.cursor()
-        cursor.execute(f"INSERT INTO port (Name,Initial,CA) values ('{tick}',{fdv},'{ca}')")
-        sql.commit()
-        cursor.close()
-    finally:
-        return_db(sql)
-
 def fetch():
     url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest'
     parameters = {
@@ -142,26 +100,46 @@ def hfetch(curr):
     data = response.json()
     return data
 
-def check(ca,tick,fdv):
-    print("Checking")
-    resp = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{ca}',headers={"Accept":"*/*"},timeout=10)
-    data = resp.json()
-    if resp.status_code == 429:
-        print("Rate limit")
-    if data:
-        if data[0]['fdv'] >= 2*fdv:
-            final = data[0]['fdv']
-            sql = get_db()
-            try:
-                cursor = sql.cursor()
-                cursor.execute(f"UPDATE port set Final={final} WHERE Name = '{tick}'")
-                sellbal(final,fdv,tick)
-                sql.commit()
-                cursor.close()
-            finally:
-                return_db(sql)
-    else:
-        print("Somethings wrong")
+def check_position(position):
+    ca, tick, initial_fdv = position
+
+    try:
+        response = requests.get(
+            f"https://api.dexscreener.com/tokens/v1/solana/{ca}",
+            headers={"Accept": "*/*"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        pairs = response.json()
+        if not pairs:
+            return
+
+        final_fdv = pairs[0]["fdv"]
+        if final_fdv < 2 * initial_fdv:
+            return
+
+        profit = 0.1 * (final_fdv - initial_fdv) / initial_fdv
+        conn = get_db()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE port
+                    SET Final = %s, SellBal = COALESCE(SellBal, 0) + %s
+                    WHERE CA = %s AND SellBal IS NULL
+                    """,
+                    (final_fdv, profit, ca),
+                )
+                if cursor.rowcount:
+                    cursor.execute("UPDATE bal SET Balance = Balance + %s", (profit,))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            return_db(conn)
+    except requests.RequestException as error:
+        print(f"Price check failed for {ca}: {error}")
     
         
 
@@ -169,7 +147,13 @@ app = Flask(__name__)
 CORS(app)
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(func=check_all_positions, trigger="interval", minutes=30)
+scheduler.add_job(
+    func=check_all_positions,
+    trigger="interval",
+    minutes=30,
+    max_instances=1,
+    coalesce=True,
+)
 scheduler.start()
 
 @app.route('/')
@@ -178,48 +162,65 @@ def main():
 
 @app.post('/helius')
 def helius():
-    hreq = list(request.get_json())
-    for tx in hreq:
-        for mints in tx['tokenTransfers']:
-            if mints['mint'].endswith('pump'):
-                sql = get_db()
-                try:
-                    cursor = sql.cursor()
-                    ca = mints['mint']
-                    response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{ca}', headers={"Accept": "*/*"})
-                    if response.status_code != 200:
-                        print(f"API error for {ca}: {response.status_code} - {response.text}")
-                        continue  
-                    try:
-                        data = list(response.json())
-                    except requests.exceptions.JSONDecodeError as e:
-                        print(f"JSON decode error for {ca}: {e} - Response: {response.text}")
+    transactions = request.get_json(silent=True) or []
+    processed = 0
+    seen_addresses = set()
+
+    for transaction in transactions:
+        for transfer in transaction.get('tokenTransfers', []):
+            ca = transfer.get('mint')
+            if not ca or not ca.endswith('pump') or ca in seen_addresses:
+                continue
+            seen_addresses.add(ca)
+
+            try:
+                response = requests.get(
+                    f'https://api.dexscreener.com/tokens/v1/solana/{ca}',
+                    headers={'Accept': '*/*'},
+                    timeout=10,
+                )
+                response.raise_for_status()
+                data = response.json()
+            except (requests.RequestException, ValueError) as error:
+                print(f'Unable to fetch token data for {ca}: {error}')
+                continue
+
+            if not data:
+                continue
+
+            token = data[0]
+            tick = token.get('baseToken', {}).get('symbol')
+            fdv = token.get('fdv')
+            native_transfers = transaction.get('nativeTransfers', [])
+            amount = native_transfers[0].get('amount', 0) / 1e9 if native_transfers else 0
+
+            if not tick or fdv is None or fdv <= 80000 or amount <= 1:
+                continue
+
+            conn = get_db()
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute('SELECT 1 FROM port WHERE CA = %s', (ca,))
+                    if cursor.fetchone():
                         continue
-                    print(f'data is {data}')
-                    cursor.execute('SELECT Name FROM port')
-                    calist=[]
-                    list1 = list(cursor.fetchall())
-                    cursor.execute('SELECT CA FROM port')
-                    list2 = list(cursor.fetchall())
-                    cursor.close()
-                    for i in list1:
-                        calist.append(i[0])
-                    newdata = data or [{'baseToken':{'symbol':' '},'fdv':0}]
-                    tick = newdata[0]['baseToken']['symbol']
-                    fdv = newdata[0]['fdv']
-                    amount = 0
-                    nativetransfers = tx['nativeTransfers'][0] if tx['nativeTransfers'] else {amount : 0}
-                    amount = nativetransfers['amount'] / 1e9 if tx['nativeTransfers'] else 0
-                    print(f'{tick} {fdv} {amount}')
-                    if fdv>80000 and amount>1:
-                        print(f'{tick} {fdv} {amount}')
-                        if tick not in calist:
-                            add(tick,fdv,ca)
-                            buybal(tick)
-                    return 'received'
-                finally:
-                    return_db(sql)
-                    return 'recieved'
+
+                    cursor.execute(
+                        """
+                        INSERT INTO port (Name, Initial, CA, BuyBal)
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                        (tick, fdv, ca, -0.1),
+                    )
+                    cursor.execute('UPDATE bal SET Balance = Balance - %s', (0.1,))
+                conn.commit()
+                processed += 1
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                return_db(conn)
+
+    return jsonify({'received': True, 'processed': processed})
 
     
                 
