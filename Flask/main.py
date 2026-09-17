@@ -42,10 +42,10 @@ def check_all_positions():
 def getprices(items):
     l = []
     for i in items:
-        print(i)
         response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{i["ca"]}',headers={"Accept":"*/*"})
         data = list(response.json())
-        l.append(data[0]["fdv"])
+        print(data)
+        l.append(data[0]["fdv"] or None)
     return l
 
 def getitems():
