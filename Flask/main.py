@@ -173,6 +173,7 @@ def helius():
             ca = transfer.get('mint')
             if not ca or not ca.endswith('pump') or ca in seen_addresses:
                 continue
+            print("checking",ca)
             seen_addresses.add(ca)
 
             try:
