@@ -167,7 +167,7 @@ def helius():
     transactions = request.get_json(silent=True) or []
     processed = 0
     seen_addresses = set()
-
+    print(transactions)
     for transaction in transactions:
         for transfer in transaction.get('tokenTransfers', []):
             ca = transfer.get('mint')
