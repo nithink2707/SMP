@@ -190,12 +190,13 @@ def helius():
 
             if not data:
                 continue
-
+            print(f'data is {data}')
             token = data[0]
             tick = token.get('baseToken', {}).get('symbol')
             fdv = token.get('fdv')
             native_transfers = transaction.get('nativeTransfers', [])
             amount = native_transfers[0].get('amount', 0) / 1e9 if native_transfers else 0
+            print(f'{tick} {fdv} {amount}')
 
             if not tick or fdv is None or fdv <= 80000 or amount <= 1:
                 continue
