@@ -90,7 +90,14 @@ def close_position(position):
     except requests.RequestException as error:
         print(f"Price check failed for {ca}: {error}")
 
-
+def retry(item,max_tries=3):
+    for i in range(max_tries):
+        response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{item["ca"]}',headers={"Accept":"*/*"},timeout=1)
+        data = list(response.json())
+        if data!=[]:
+            break
+    return data
+    
 
 def getprices(items):
     l = []
@@ -98,7 +105,10 @@ def getprices(items):
         print(i)
         response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{i["ca"]}',headers={"Accept":"*/*"})
         data = list(response.json())
-        print(data)
+        if data==[]:
+            data = retry(i)
+            if data==[]:
+                continue
         l.append(data[0]["fdv"])
     return l
 
@@ -133,7 +143,6 @@ def getbal():
     
 
 
-
 def fetch():
     url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest'
     parameters = {
@@ -162,7 +171,7 @@ def check_position(position):
         response = requests.get(
             f"https://api.dexscreener.com/tokens/v1/solana/{ca}",
             headers={"Accept": "*/*"},
-            timeout=10,
+            timeout=5,
         )
         response.raise_for_status()
         pairs = response.json()
