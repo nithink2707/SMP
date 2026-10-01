@@ -240,7 +240,7 @@ def helius():
     for transaction in transactions:
         for transfer in transaction.get('tokenTransfers', []):
             ca = transfer.get('mint')
-            if not ca or not ca in base or ca in seen_addresses:
+            if not ca or ca in base or ca in seen_addresses:
                 continue
             print("checking",ca)
             seen_addresses.add(ca)
