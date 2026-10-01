@@ -99,7 +99,7 @@ def getprices(items):
         response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{i["ca"]}',headers={"Accept":"*/*"})
         data = list(response.json())
         print(data)
-        # l.append(data[0]["fdv"])
+        l.append(data[0]["fdv"])
     return l
 
 def getitems():

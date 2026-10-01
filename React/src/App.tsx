@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AreaSeries, BarSeries, BaselineSeries, CandlestickSeries, createChart } from 'lightweight-charts';
+import { AreaSeries, BarSeries, BaselineSeries, CandlestickSeries, createChart } from "lightweight-charts";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -38,13 +38,6 @@ interface Proposal {
   description: string;
 }
 
-type VotingTier = {
-  name: string;
-  votes: string;
-  members: string[];
-  color: string;
-};
-
 const GovernanceView = ({ onBack }: { onBack: () => void }) => {
   const tiers: VotingTier[] = [
     {
@@ -73,66 +66,73 @@ const GovernanceView = ({ onBack }: { onBack: () => void }) => {
     }
   ];
 
+  {/*Governance UI*/}
+
   return (
-    <>
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto px-6 py-12"
-      >
-        <div className="flex items-center justify-between mb-12">
-          <button 
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-6xl mx-auto px-6 py-12">
+
+        <button
             onClick={onBack}
-            className="flex items-center gap-2 text-on-surface-variant dark:text-slate-400 hover:text-primary dark:hover:text-orange-400 font-bold transition-colors"
+            className="flex items-center gap-2 text-[color:var(--surface-container)] dark:text-[color:var(--surface-container-text)] hover:text-tmain font-bold transition-colors duration-200 mb-12 text-sm tracking-widest uppercase"
+            style={{ transition: "color 0.3s ease" }}
           >
-            <ArrowLeft size={20} />
-            Back to Kitchen
-          </button>
-          <h1 className="text-4xl font-black font-headline text-on-surface dark:text-white">Voting Power</h1>
+            <ArrowLeft size={14} />
+            Back to home
+        </button>
+
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+         <p className="text-[color:var(--surface-container)] dark:text-[color:var(--surface-container-text)] text-xs font-black uppercase tracking-[0.3em] mb-2">Samosa Money Printers</p>
+          <h1 className="text-4xl md:text-6xl font-black text-tmain tracking-tighter leading-none">GOVERNANCE</h1>
+          <p className="font-bold text-sm mt-3 max-w-sm text-[color:var(--surface-container)] dark:text-[color:var(--surface-container-text)]">
+            Voting power distributed across tiers — balanced decision-making from the kitchen.
+          </p>
         </div>
-
-        <div className="grid gap-8">
-          {tiers.map((tier, index) => (
-            <motion.div 
-              key={tier.name}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white dark:bg-slate-900 border-4 border-surface-container-lowest dark:border-slate-800 p-8 rounded-xl sticker-shadow"
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                  <h3 className="text-2xl font-black dark:text-white">{tier.name}</h3>
-                  <p className="text-on-surface-variant dark:text-slate-400 font-bold tracking-wider text-sm mt-1">Tier {index+1}</p>
-                </div>
-                <div className={`${tier.color} px-6 py-2 rounded-full font-black text-lg border-2 border-surface-container-lowest dark:border-slate-700 sticker-shadow`}>
-                  {tier.votes}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                {tier.members.map((member) => (
-                  <div 
-                    key={member}
-                    className="bg-surface-container-low dark:bg-slate-800 px-4 py-2 rounded-lg border-2 border-surface-container-lowest dark:border-slate-700 font-bold text-on-surface dark:text-slate-200"
-                  >
-                    {member}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      <div className="mt-16 bg-primary dark:bg-orange-600 text-white p-12 rounded-xl border-[8px] border-white dark:border-slate-800 sticker-shadow text-center">
-        <Vote className="mx-auto mb-6 w-16 h-16" />
-        <h2 className="text-3xl font-black mb-4">DAO Governance Structure</h2>
-        <p className="text-lg opacity-90 font-medium max-w-2xl mx-auto">
-          Voting power in Samosa Money Printers is distributed across tiers to ensure balanced decision-making and reward long-term commitment to the kitchen.
-        </p>
       </div>
-    </>
+
+     <div className="grid gap-6">
+  {tiers.map((tier, index) => (
+    <motion.div
+      key={tier.name}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className="bg-[color:var(--surface-container)] border-4 border-tmain/40 hover:border-tmain p-8 rounded-xl transition-all duration-200">
+      <div className="flex flex-col gap-4 mb-6">
+  <div>
+    <p className="text-tmain/40 text-xs font-black uppercase tracking-widest mb-1">Tier {String(index + 1).padStart(2, '0')}</p>
+    <h3 className="text-2xl font-black text-white">{tier.name}</h3>
+  </div>
+  <div className="self-start px-6 py-2 rounded-full font-black text-lg border-2 border-tmain text-tmain">
+    {tier.votes}
+  </div>
+</div>
+
+      <div className="flex flex-wrap gap-3">
+        {tier.members.map((member) => (
+          <div
+            key={member}
+            className="px-4 py-2 rounded-lg border-2 border-tmain/30 text-tmain/60 font-black text-sm"
+          >
+            {member}
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  ))}
+</div>
+
+<div className="mt-8 bg-[color:var(--surface-container)] border-4 border-tmain/40 p-10 rounded-xl text-center">
+  <Vote className="mx-auto mb-4 text-white w-12 h-12" />
+  <h2 className="text-2xl font-black text-white mb-3">DAO GOVERNANCE STRUCTURE</h2>
+  <p className="text-tmain/40 font-medium max-w-2xl mx-auto text-sm leading-relaxed">
+    Voting power in Samosa Money Printers is distributed across tiers to ensure balanced decision-making and reward long-term commitment to the kitchen.
+  </p>
+</div>
+    </motion.div>
   );
 };
 
@@ -245,82 +245,82 @@ return (!dataIsLoaded ? (
   >
     <button
       onClick={onBack}
-      className="flex items-center gap-2 text-tmain dark:text-orange-400 hover:text-tmain dark:hover:text-orange-300 transition-colors mb-8"
+      className="flex items-center gap-2 text-[color:var(--surface-container)] dark:text-[color:var(--surface-container-text)] hover:text-tmain font-bold transition-colors duration-200 mb-12 text-sm tracking-widest uppercase"
     >
-      <ArrowLeft size={20} />
+      <ArrowLeft size={14} />
       Back to Home
     </button>
 
-    <h1 className="text-4xl font-black mb-8 dark:text-white">Balance: {data[1]}</h1>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <div>
+        <p className="text-[color:var(--surface-container)] dark:text-[color:var(--surface-container-text)] text-xs font-black uppercase tracking-[0.3em] mb-2">Samosa Money Printers</p>
+        <h1 className="text-6xl font-black text-tmain tracking-tighter leading-none">THE BAKERY</h1>
+        <p className="font-bold text-sm mt-3 max-w-sm text-[color:var(--surface-container)] dark:text-[color:var(--surface-container-text)]">
+          P2P token leaderboard — live performance data from the kitchen.
+        </p>
+      </div>
 
-    <div className="flex flex-col items-start md:items-end gap-1 px-6 py-4 rounded-xl border border-tmain/20 bg-[color:var(--surface-container)] min-w-[180px] mb-8">
-      <span className="text-tmain/40 text-[10px] font-black uppercase tracking-[0.2em]">Bot Balance</span>
-      <span className="text-4xl font-black text-tmain tabular-nums">{data[1]}</span>
+      {/* BALANCE */}
+      <div className="flex flex-col items-start md:items-end gap-1 px-6 py-4 rounded-xl border border-tmain/20 bg-[color:var(--surface-container)] min-w-[180px]">
+        <span className="text-tmain/40 text-[10px] font-black uppercase tracking-[0.2em]">Bot Balance</span>
+        <span className="text-4xl font-black text-tmain tabular-nums">{data[1]}</span>
+      </div>
     </div>
 
+   {/* table*/}
+<div className="rounded-2xl border border-tmain bg-surface-container overflow-hidden">
+
+  {/* Panel Header */}
+  <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-tmain/10">
+    <div className="flex items-center gap-3">
+      <span className="w-2 h-2 rounded-full bg-tmain animate-pulse" />
+      <span className="text-tmain font-black text-xs md:text-sm tracking-widest uppercase">P2P Leaderboard</span>
+      <span className="text-tmain/30 text-[10px] md:text-xs font-mono">LIVE</span>
+    </div>
+    <button className="px-3 py-1.5 rounded-lg border border-tmain/30 text-tmain text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-tmain hover:text-black transition-all duration-200">
+      Refresh
+    </button>
+  </div>
+
+{/* Column Labels - Responsive Grid */}
+  {/* Mobile: # (2rem), Ticker (4rem), CA (fills space), Price (4.5rem) */}
+  <div className="grid grid-cols-[2rem_4rem_1fr_4.5rem] md:grid-cols-[3rem_8rem_1fr_8rem] px-4 md:px-6 py-3 border-b border-tmain/10 bg-tmain/5">
+    <span className="text-[10px] font-black text-tmain/30 uppercase tracking-widest">#</span>
+    <span className="text-[10px] font-black text-tmain/30 uppercase tracking-widest">Coin</span>
+    <span className="text-[10px] font-black text-tmain/30 uppercase tracking-widest truncate">Contract Address</span>
+    <span className="text-[10px] font-black text-tmain/30 uppercase tracking-widest text-right">Price</span>
+  </div>
+
+  {/* Rows */}
+  <div className="divide-y divide-tmain/5">
     {data[0].map((coin, i) => (
-      <div
+      <motion.div
         key={i}
-        className="group grid grid-cols-[2rem_6rem_1fr_auto] min-w-0 items-center px-3 py-4 rounded-xl 
-        bg-surface-container 
-        shadow-[0_1px_0_0_var(--tmain)]
-        hover:shadow-[0_10px_0_0_var(--tmain)]
-        hover:-translate-y-1 transition-all duration-200"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: i * 0.04 }}
+        className="grid grid-cols-[3rem_8rem_1fr_8rem] items-center px-6 py-4
+          border-l-2 border-l-transparent
+          hover:border-l-tmain hover:bg-tmain/5
+          transition-all duration-150"
       >
-        <span className="font-black text-tmain text-lg">
-          {i + 1}
+        <span className="font-black text-sm tabular-nums text-tmain/30">
+          {String(i + 1).padStart(2, '0')}
         </span>
-        <span className="font-black text-tmain text-lg">{coin.tick}</span>
-        <span className="text-tmain/50 text-xs truncate">{coin.ca}</span>
-        <span className="text-tmain font-bold text-sm">{coin.price ?? coin.p}</span>
-      </div>
+        <span className="font-black text-tmain text-sm tracking-wider">{coin.tick}</span>
+        <span className="text-tmain/30 text-xs font-mono truncate pr-12">{coin.ca}</span>
+        <span className={`font-black text-[11px] md:text-sm tabular-nums text-center whitespace-nowrap ${
+          parseFloat(data[7][i]) < 0 ? "text-red-400" : "text-green-400"
+        }`}>
+          {parseFloat(data[7][i]) >= 0 ? `+${data[7][i]}` : data[7][i]}
+        </span>
+      </motion.div>
     ))}
+  </div>
 
-    <div className="rounded-2xl border border-tmain bg-surface-container overflow-hidden mt-8">
-      <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-tmain/10">
-        <div className="flex items-center gap-3">
-          <span className="w-2 h-2 rounded-full bg-tmain animate-pulse" />
-          <span className="text-tmain font-black text-xs md:text-sm tracking-widest uppercase">P2P Leaderboard</span>
-          <span className="text-tmain/30 text-[10px] md:text-xs font-mono">LIVE</span>
-        </div>
-        <button className="px-3 py-1.5 rounded-lg border border-tmain/30 text-tmain text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-tmain hover:text-black transition-all duration-200">
-          Refresh
-        </button>
-      </div>
-
-      <div className="grid grid-cols-[2rem_4rem_1fr_4.5rem] md:grid-cols-[3rem_8rem_1fr_8rem] px-4 md:px-6 py-3 border-b border-tmain/10 bg-tmain/5">
-        <span className="text-[10px] font-black text-tmain/30 uppercase tracking-widest">#</span>
-        <span className="text-[10px] font-black text-tmain/30 uppercase tracking-widest">Coin</span>
-        <span className="text-[10px] font-black text-tmain/30 uppercase tracking-widest truncate">Contract Address</span>
-        <span className="text-[10px] font-black text-tmain/30 uppercase tracking-widest text-right">Price</span>
-      </div>
-
-      <div className="divide-y divide-tmain/5">
-        {data[0].map((coin, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.04 }}
-            className="grid grid-cols-[3rem_8rem_1fr_8rem] items-center px-6 py-4 border-l-2 border-l-transparent hover:border-l-tmain hover:bg-tmain/5 transition-all duration-150"
-          >
-            <span className="font-black text-sm tabular-nums text-tmain/30">
-              {String(i + 1).padStart(2, '0')}
-            </span>
-            <span className="font-black text-tmain text-sm tracking-wider">{coin.tick}</span>
-            <span className="text-tmain/30 text-xs font-mono truncate pr-12">{coin.ca}</span>
-            <span className={`font-black text-[11px] md:text-sm tabular-nums text-center whitespace-nowrap ${
-              parseFloat(data[7][i]) < 0 ? "text-red-400" : "text-green-400"
-            }`}>
-              {parseFloat(data[7][i]) >= 0 ? `+${data[7][i]}` : data[7][i]}
-            </span>
-          </motion.div>
-        ))}
-      </div>
-    </div>
+</div>
   </motion.div>
-  )
-);
+));
 };
 
 type Item = {
