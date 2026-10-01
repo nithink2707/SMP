@@ -36,7 +36,60 @@ def check_all_positions():
     for position in positions:
         position_executor.submit(check_position, position)
     
-    
+def close_all_positions():
+    conn = get_db()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT CA, Name, Initial FROM port WHERE SellBal IS NULL"
+            )
+            open = cursor.fetchall()
+
+    finally:
+        return_db(conn)
+
+    for position in open:
+        position_executor.submit(close_position,position)
+
+def close_position(position):
+    ca, tick, initial_fdv = position
+
+    try:
+        response = requests.get(
+            f"https://api.dexscreener.com/tokens/v1/solana/{ca}",
+            headers={"Accept": "*/*"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        pairs = response.json()
+        if not pairs:
+            return
+
+        final_fdv = pairs[0]["fdv"]
+
+        profit = 0.1 * (final_fdv - initial_fdv) / initial_fdv
+        conn = get_db()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE port
+                    SET Final = %s, SellBal = COALESCE(SellBal, 0) + %s
+                    WHERE CA = %s AND SellBal IS NULL
+                    """,
+                    (final_fdv, profit+0.1, ca),
+                )
+                if cursor.rowcount:
+                    cursor.execute("UPDATE bal SET Balance = Balance + %s", (profit+0.1,))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            return_db(conn)
+    except requests.RequestException as error:
+        print(f"Price check failed for {ca}: {error}")
+
 
 
 def getprices(items):
@@ -130,10 +183,10 @@ def check_position(position):
                     SET Final = %s, SellBal = COALESCE(SellBal, 0) + %s
                     WHERE CA = %s AND SellBal IS NULL
                     """,
-                    (final_fdv, profit, ca),
+                    (final_fdv, profit+0.1, ca),
                 )
                 if cursor.rowcount:
-                    cursor.execute("UPDATE bal SET Balance = Balance + %s", (profit,))
+                    cursor.execute("UPDATE bal SET Balance = Balance + %s", (profit+0.1,))
             conn.commit()
         except Exception:
             conn.rollback()
@@ -152,9 +205,16 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(
     func=check_all_positions,
     trigger="interval",
-    minutes=30,
+    minutes=15,
     max_instances=1,
     coalesce=True,
+)
+scheduler.add_job(
+    func =close_all_positions,
+    trigger="interval",
+    hours=24,
+    max_instances=1,
+    coalesce=True
 )
 scheduler.start()
 
