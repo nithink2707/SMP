@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 
 DBURL = os.environ["DATABASE_URL"]
-
+base = ['So11111111111111111111111111111111111111111','pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn']
 db_pool = psycopg2.pool.ThreadedConnectionPool(1,80,DBURL)
 position_executor = ThreadPoolExecutor(max_workers=20)
 
@@ -240,7 +240,7 @@ def helius():
     for transaction in transactions:
         for transfer in transaction.get('tokenTransfers', []):
             ca = transfer.get('mint')
-            if not ca or not ca.endswith('pump') or ca in seen_addresses:
+            if not ca or not ca in base or ca in seen_addresses:
                 continue
             print("checking",ca)
             seen_addresses.add(ca)
