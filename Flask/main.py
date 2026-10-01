@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 
 DBURL = os.environ["DATABASE_URL"]
-base = ['So11111111111111111111111111111111111111111','pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn']
+base = ['So11111111111111111111111111111111111111111','pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn','So11111111111111111111111111111111111111112']
 db_pool = psycopg2.pool.ThreadedConnectionPool(1,80,DBURL)
 position_executor = ThreadPoolExecutor(max_workers=20)
 
