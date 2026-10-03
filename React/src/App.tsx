@@ -256,7 +256,7 @@ return (!dataIsLoaded ? (
         <p className="text-[color:var(--surface-container)] dark:text-[color:var(--surface-container-text)] text-xs font-black uppercase tracking-[0.3em] mb-2">Samosa Money Printers</p>
         <h1 className="text-6xl font-black text-tmain tracking-tighter leading-none">THE BAKERY</h1>
         <p className="font-bold text-sm mt-3 max-w-sm text-[color:var(--surface-container)] dark:text-[color:var(--surface-container-text)]">
-          P2P token leaderboard — live performance data from the kitchen.
+          Auto-Trade Simulator — live performance data from the kitchen.
         </p>
       </div>
 
@@ -274,7 +274,7 @@ return (!dataIsLoaded ? (
   <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-tmain/10">
     <div className="flex items-center gap-3">
       <span className="w-2 h-2 rounded-full bg-tmain animate-pulse" />
-      <span className="text-tmain font-black text-xs md:text-sm tracking-widest uppercase">P2P Leaderboard</span>
+      <span className="text-tmain font-black text-xs md:text-sm tracking-widest uppercase">10 Latest Tokens</span>
       <span className="text-tmain/30 text-[10px] md:text-xs font-mono">LIVE</span>
     </div>
     <button className="px-3 py-1.5 rounded-lg border border-tmain/30 text-tmain text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-tmain hover:text-black transition-all duration-200">
