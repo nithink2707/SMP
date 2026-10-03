@@ -116,7 +116,7 @@ def getitems():
     sql = get_db()
     try:
         cursor = sql.cursor()
-        cursor.execute("SELECT Name,Initial,CA FROM port")
+        cursor.execute("SELECT Name,Initial,CA FROM port WHERE final is NULL")
         rec = list(cursor.fetchall())
         cursor.close()
         l=[]
