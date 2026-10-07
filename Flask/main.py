@@ -74,10 +74,10 @@ def close_position(position):
                 cursor.execute(
                     """
                     UPDATE port
-                    SET Final = %s, SellBal = COALESCE(SellBal, 0) + %s
+                    SET Final = %s, SellBal = COALESCE(SellBal, 0) + %s, pnl = %s
                     WHERE CA = %s AND SellBal IS NULL
                     """,
-                    (final_fdv, profit+0.1, ca),
+                    (final_fdv, profit+0.1,(final_fdv - initial_fdv) / initial_fdv, ca),
                 )
                 if cursor.rowcount:
                     cursor.execute("UPDATE bal SET Balance = Balance + %s", (profit+0.1,))
@@ -189,10 +189,10 @@ def check_position(position):
                 cursor.execute(
                     """
                     UPDATE port
-                    SET Final = %s, SellBal = COALESCE(SellBal, 0) + %s
+                    SET Final = %s, SellBal = COALESCE(SellBal, 0) + %s, pnl = %s
                     WHERE CA = %s AND SellBal IS NULL
                     """,
-                    (final_fdv, profit+0.1, ca),
+                    (final_fdv, profit+0.1,(final_fdv - initial_fdv) / initial_fdv, ca),
                 )
                 if cursor.rowcount:
                     cursor.execute("UPDATE bal SET Balance = Balance + %s", (profit+0.1,))
