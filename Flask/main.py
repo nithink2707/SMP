@@ -108,11 +108,9 @@ def getprices(items):
         if data==[]:
             data = retry(i)
             if data==[]:
+                l.append(None)
                 continue
-        if not data:
-            l.append(None)
-        else:
-            l.append(data[0]["fdv"])
+        l.append(data[0]["fdv"])
     return l
 
 def getitems():
@@ -312,7 +310,11 @@ async def bot():
         loop.run_in_executor(None,fetch))
     cur = await loop.run_in_executor(None,partial(getprices,items))
     fdvs = [i["fdv"] for i in items]
-    inc = [round(((cur-fdv)/fdv)*100,2) for cur,fdv in zip(cur,fdvs)]
+    inc = [
+    None if current is None
+    else round(((current - initial) / initial) * 100, 2)
+    for current, initial in zip(cur, fdvs)
+]
     return jsonify({"items":[items,balance,eth,sol,btc,cur,fdvs,inc]})
 
 @app.route('/api')
