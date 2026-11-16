@@ -128,8 +128,8 @@ def retry(mints, max_tries=4):
 def getprices(items):
     mints = [item["ca"] for item in items]
     fdvs = {}
-    for start in range(0, len(mints), 100):
-        fdvs.update(retry(mints[start:start + 100]))
+    for start in range(0, len(mints), 15):
+        fdvs.update(retry(mints[start:start + 15]))
     return [fdvs.get(mint) for mint in mints]
 
 def getitems():
