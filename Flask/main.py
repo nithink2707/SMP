@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 
 DBURL = os.environ["DATABASE_URL"]
+JUPITER_API_KEY = 'jup_57fbd7106d63f2dbb6ff92bb12b964142875cbc238698678fdf69631c968bbb9'
 base = ['So11111111111111111111111111111111111111111','pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn','So11111111111111111111111111111111111111112']
 db_pool = psycopg2.pool.ThreadedConnectionPool(1,80,DBURL)
 position_executor = ThreadPoolExecutor(max_workers=20)
@@ -90,28 +91,46 @@ def close_position(position):
     except requests.RequestException as error:
         print(f"Price check failed for {ca}: {error}")
 
-def retry(item,max_tries=4):
-    for i in range(max_tries):
-        response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{item["ca"]}',headers={"Accept":"*/*"},timeout=1)
-        data = list(response.json())
-        if data!=[]:
+def retry(mints, max_tries=4):
+    if not JUPITER_API_KEY:
+        raise RuntimeError("JUPITER_API_KEY environment variable is required")
+
+    pending = list(dict.fromkeys(mints))
+    fdvs = {}
+    for _ in range(max_tries):
+        if not pending:
             break
-    return data
-    
+
+        response = requests.get(
+            "https://api.jup.ag/tokens/v2/search",
+            params={"query": ",".join(pending)},
+            headers={"x-api-key": JUPITER_API_KEY},
+            timeout=10,
+        )
+        response.raise_for_status()
+        tokens = response.json()
+        if not isinstance(tokens, list):
+            raise ValueError("Unexpected response from Jupiter token search")
+
+        found = {}
+        for token in tokens:
+            mint = token.get("id")
+            fdv = token.get("fdv")
+            if mint in pending and fdv is not None:
+                found[mint] = fdv
+
+        fdvs.update(found)
+        pending = [mint for mint in pending if mint not in found]
+
+    return fdvs
+
 
 def getprices(items):
-    l = []
-    for i in items:
-        print(i)
-        response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{i["ca"]}',headers={"Accept":"*/*"})
-        data = list(response.json())
-        if data==[]:
-            data = retry(i)
-            if data==[]:
-                l.append(None)
-                continue
-        l.append(data[0]["fdv"])
-    return l
+    mints = [item["ca"] for item in items]
+    fdvs = {}
+    for start in range(0, len(mints), 100):
+        fdvs.update(retry(mints[start:start + 100]))
+    return [fdvs.get(mint) for mint in mints]
 
 def getitems():
     sql = get_db()
