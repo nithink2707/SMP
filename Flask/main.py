@@ -105,6 +105,7 @@ def getprices(items):
         print(i)
         response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{i["ca"]}',headers={"Accept":"*/*"})
         data = list(response.json())
+        print(data[0]["fdv"])
         if data==[]:
             data = retry(i)
             if data==[]:

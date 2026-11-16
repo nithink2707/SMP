@@ -312,7 +312,7 @@ return (!dataIsLoaded ? (
         <span className={`font-black text-[11px] md:text-sm tabular-nums text-center whitespace-nowrap ${
           data[7][i] < 0 ? "text-red-400" : "text-green-400"
         }`}>
-          {data[7][i] >= 0 ? `+${data[7][i]}` : `-${data[7][i]}`}
+          {data[7][i] >= 0 ? `+${data[7][i]}` : `${data[7][i]}`}
         </span>
       </motion.div>
     ))}
