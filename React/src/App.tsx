@@ -310,9 +310,9 @@ return (!dataIsLoaded ? (
         <span className="font-black text-tmain text-sm tracking-wider">{coin.tick}</span>
         <span className="text-tmain/30 text-xs font-mono truncate pr-12">{coin.ca}</span>
         <span className={`font-black text-[11px] md:text-sm tabular-nums text-center whitespace-nowrap ${
-          parseFloat(data[7][i]) < 0 ? "text-red-400" : "text-green-400"
+          data[7][i] < 0 ? "text-red-400" : "text-green-400"
         }`}>
-          {parseFloat(data[7][i]) >= 0 ? `+${data[7][i]}` : data[7][i]}
+          {data[7][i] >= 0 ? `+${data[7][i]}` : `-${data[7][i]}`}
         </span>
       </motion.div>
     ))}
