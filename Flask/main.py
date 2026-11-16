@@ -109,7 +109,10 @@ def getprices(items):
             data = retry(i)
             if data==[]:
                 continue
-        l.append(data[0]["fdv"])
+        if not data:
+            l.append(None)
+        else:
+            l.append(data[0]["fdv"])
     return l
 
 def getitems():
