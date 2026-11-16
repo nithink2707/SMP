@@ -90,7 +90,7 @@ def close_position(position):
     except requests.RequestException as error:
         print(f"Price check failed for {ca}: {error}")
 
-def retry(item,max_tries=3):
+def retry(item,max_tries=10):
     for i in range(max_tries):
         response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{item["ca"]}',headers={"Accept":"*/*"},timeout=1)
         data = list(response.json())
@@ -105,7 +105,6 @@ def getprices(items):
         print(i)
         response = requests.get(f'https://api.dexscreener.com/tokens/v1/solana/{i["ca"]}',headers={"Accept":"*/*"})
         data = list(response.json())
-        print(data[0]["fdv"])
         if data==[]:
             data = retry(i)
             if data==[]:
