@@ -265,9 +265,10 @@ def helius():
             fdv = token.get('fdv')
             native_transfers = transaction.get('nativeTransfers', [])
             amount = native_transfers[0].get('amount', 0) / 1e9 if native_transfers else 0
+            fee_payer = transaction.get('feePayer')
             print(f'{tick} {fdv} {amount}')
 
-            if not tick or fdv is None or fdv <= 80000 or amount <= 1:
+            if not tick or fdv is None or fdv <= 80000 or amount <= 0.025:
                 continue
 
             conn = get_db()
@@ -279,10 +280,10 @@ def helius():
 
                     cursor.execute(
                         """
-                        INSERT INTO port (Name, Initial, CA, BuyBal)
-                        VALUES (%s, %s, %s, %s)
+                        INSERT INTO port (Name, Initial, CA, BuyBal, Followed)
+                        VALUES (%s, %s, %s, %s, %s)
                         """,
-                        (tick, fdv, ca, -0.1),
+                        (tick, fdv, ca, -0.1, fee_payer),
                     )
                     cursor.execute('UPDATE bal SET Balance = Balance - %s', (0.1,))
                 conn.commit()
@@ -334,4 +335,3 @@ def hists():
 
 
     
-
