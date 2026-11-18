@@ -15,7 +15,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 DBURL = os.environ["DATABASE_URL"]
 JUPITER_API_KEY = 'jup_57fbd7106d63f2dbb6ff92bb12b964142875cbc238698678fdf69631c968bbb9'
 base = ['So11111111111111111111111111111111111111111','pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn','So11111111111111111111111111111111111111112']
-db_pool = psycopg2.pool.ThreadedConnectionPool(1,80,DBURL)
+db_pool = psycopg2.pool.ThreadedConnectionPool(1,45,DBURL)
 position_executor = ThreadPoolExecutor(max_workers=20)
 POSITION_BATCH_SIZE = 100
 
@@ -35,8 +35,10 @@ def check_all_positions():
     finally:
         return_db(conn)
 
-    for position in positions:
-        position_executor.submit(check_position, position)
+    for start in range(0, len(positions), POSITION_BATCH_SIZE):
+        position_executor.submit(
+            check_position, positions[start:start + POSITION_BATCH_SIZE]
+        )
     
 def close_all_positions():
     conn = get_db()
@@ -190,46 +192,47 @@ def hfetch(curr):
     data = response.json()
     return data
 
-def check_position(position):
-    ca, tick, initial_fdv = position
+def check_position(positions):
+    if not positions:
+        return
 
     try:
-        response = requests.get(
-            f"https://api.dexscreener.com/tokens/v1/solana/{ca}",
-            headers={"Accept": "*/*"},
-            timeout=5,
-        )
-        response.raise_for_status()
-        pairs = response.json()
-        if not pairs:
-            return
-
-        final_fdv = pairs[0]["fdv"]
-        if final_fdv < 2 * initial_fdv:
-            return
-
-        profit = 0.1 * (final_fdv - initial_fdv) / initial_fdv
+        fdvs = retry([position[0] for position in positions])
         conn = get_db()
         try:
             with conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    UPDATE port
-                    SET Final = %s, SellBal = COALESCE(SellBal, 0) + %s, pnl = %s
-                    WHERE CA = %s AND SellBal IS NULL
-                    """,
-                    (final_fdv, profit+0.1,(final_fdv - initial_fdv) / initial_fdv, ca),
-                )
-                if cursor.rowcount:
-                    cursor.execute("UPDATE bal SET Balance = Balance + %s", (profit+0.1,))
+                for ca, tick, initial_fdv in positions:
+                    final_fdv = fdvs.get(ca)
+                    if final_fdv is None or final_fdv < 2 * initial_fdv:
+                        continue
+
+                    profit = 0.1 * (final_fdv - initial_fdv) / initial_fdv
+                    cursor.execute(
+                        """
+                        UPDATE port
+                        SET Final = %s, SellBal = COALESCE(SellBal, 0) + %s, pnl = %s
+                        WHERE CA = %s AND SellBal IS NULL
+                        """,
+                        (
+                            final_fdv,
+                            profit + 0.1,
+                            (final_fdv - initial_fdv) / initial_fdv,
+                            ca,
+                        ),
+                    )
+                    if cursor.rowcount:
+                        cursor.execute(
+                            "UPDATE bal SET Balance = Balance + %s",
+                            (profit + 0.1,),
+                        )
             conn.commit()
         except Exception:
             conn.rollback()
             raise
         finally:
             return_db(conn)
-    except requests.RequestException as error:
-        print(f"Price check failed for {ca}: {error}")
+    except (requests.RequestException, ValueError) as error:
+        print(f"Price check failed for position batch: {error}")
     
         
 
