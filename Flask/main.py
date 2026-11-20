@@ -22,18 +22,22 @@ POSITION_BATCH_SIZE = 100
 def get_db():
     return db_pool.getconn()
 
-def return_db(conn):
-    db_pool.putconn(conn)
+def return_db(conn, discard=False):
+    db_pool.putconn(conn, close=discard or bool(conn.closed))
 
 def check_all_positions():
     """Submit all open positions for price checks."""
     conn = get_db()
+    discard = False
     try:
         with conn.cursor() as cursor:
             cursor.execute("SELECT CA, Name, Initial FROM port WHERE SellBal IS NULL")
             positions = cursor.fetchall()
+    except psycopg2.OperationalError:
+        discard = True
+        raise
     finally:
-        return_db(conn)
+        return_db(conn, discard=discard)
 
     for start in range(0, len(positions), POSITION_BATCH_SIZE):
         position_executor.submit(
