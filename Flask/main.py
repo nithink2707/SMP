@@ -33,7 +33,7 @@ def check_all_positions():
         with conn.cursor() as cursor:
             cursor.execute("SELECT CA, Name, Initial FROM port WHERE SellBal IS NULL")
             positions = cursor.fetchall()
-    except psycopg2.OperationalError:
+    except (psycopg2.OperationalError, psycopg2.InterfaceError):
         discard = True
         raise
     finally:
@@ -68,6 +68,7 @@ def close_position(positions):
     try:
         fdvs = retry([position[0] for position in positions])
         conn = get_db()
+        discard = False
         try:
             with conn.cursor() as cursor:
                 for ca, tick, initial_fdv in positions:
@@ -95,11 +96,18 @@ def close_position(positions):
                             (profit + 0.1,),
                         )
             conn.commit()
+        except (psycopg2.OperationalError, psycopg2.InterfaceError):
+            discard = True
+            raise
         except Exception:
-            conn.rollback()
+            try:
+                conn.rollback()
+            except (psycopg2.OperationalError, psycopg2.InterfaceError):
+                discard = True
+                raise
             raise
         finally:
-            return_db(conn)
+            return_db(conn, discard=discard)
     except (requests.RequestException, ValueError) as error:
         print(f"Price check failed for position batch: {error}")
 
@@ -203,6 +211,7 @@ def check_position(positions):
     try:
         fdvs = retry([position[0] for position in positions])
         conn = get_db()
+        discard = False
         try:
             with conn.cursor() as cursor:
                 for ca, tick, initial_fdv in positions:
@@ -230,11 +239,18 @@ def check_position(positions):
                             (profit + 0.1,),
                         )
             conn.commit()
+        except (psycopg2.OperationalError, psycopg2.InterfaceError):
+            discard = True
+            raise
         except Exception:
-            conn.rollback()
+            try:
+                conn.rollback()
+            except (psycopg2.OperationalError, psycopg2.InterfaceError):
+                discard = True
+                raise
             raise
         finally:
-            return_db(conn)
+            return_db(conn, discard=discard)
     except (requests.RequestException, ValueError) as error:
         print(f"Price check failed for position batch: {error}")
     
@@ -305,6 +321,7 @@ def helius():
                 continue
 
             conn = get_db()
+            discard = False
             try:
                 with conn.cursor() as cursor:
                     cursor.execute('SELECT 1 FROM port WHERE CA = %s', (ca,))
@@ -321,11 +338,18 @@ def helius():
                     cursor.execute('UPDATE bal SET Balance = Balance - %s', (0.1,))
                 conn.commit()
                 processed += 1
+            except (psycopg2.OperationalError, psycopg2.InterfaceError):
+                discard = True
+                raise
             except Exception:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except (psycopg2.OperationalError, psycopg2.InterfaceError):
+                    discard = True
+                    raise
                 raise
             finally:
-                return_db(conn)
+                return_db(conn, discard=discard)
 
     return jsonify({'received': True, 'processed': processed})
 
