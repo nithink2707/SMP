@@ -247,7 +247,7 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(
     func=check_all_positions,
     trigger="interval",
-    minutes=15,
+    minutes=4,
     max_instances=1,
     coalesce=True,
 )
